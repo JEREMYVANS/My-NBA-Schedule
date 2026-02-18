@@ -475,116 +475,62 @@ function renderSchedule(schedule, selectedDateInput) {
 
 // 获取 NBA 排名数据
 async function getStandings() {
-    console.log('开始获取 NBA 排名数据');
+    console.log('开始获取真实 NBA 排名数据');
     const standings = {
         eastern: [],
         western: []
     };
     
     try {
-        const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
-        console.log('请求排名 URL:', url);
+        // 使用 ESPN 的 API v2 获取排名数据
+        const standingsUrl = 'https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?region=us&lang=en&contentorigin=espn';
+        console.log('请求排名 URL:', standingsUrl);
         
-        const response = await fetch(url);
+        const response = await fetch(standingsUrl);
         console.log('排名响应状态:', response.status);
         
         if (response.ok) {
             const data = await response.json();
+            console.log('获取到的排名数据:', data);
             
-            // 尝试从 ESPN API 获取排名数据
-            // 我们使用另一个专门的排名 API 端点
-            const standingsUrl = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams';
-            const standingsResponse = await fetch(standingsUrl);
-            
-            if (standingsResponse.ok) {
-                const standingsData = await standingsResponse.json();
-                
-                if (standingsData.sports && standingsData.sports[0] && standingsData.sports[0].leagues && standingsData.sports[0].leagues[0]) {
-                    const divisions = standingsData.sports[0].leagues[0].divisions;
+            if (data.children && data.children.length > 0) {
+                for (const conference of data.children) {
+                    const conferenceName = conference.name.toLowerCase().includes('east') ? 'eastern' : 'western';
+                    console.log('处理联盟:', conference.name, '->', conferenceName);
                     
-                    for (const division of divisions) {
-                        const conference = division.name.includes('East') ? 'eastern' : 'western';
-                        
-                        if (division.teams) {
-                            for (const team of division.teams) {
-                                const teamData = {
-                                    name: team.team.displayName,
-                                    abbreviation: team.team.abbreviation,
-                                    wins: team.record ? team.record.items[0].stats.find(s => s.name === 'wins')?.value || 0 : 0,
-                                    losses: team.record ? team.record.items[0].stats.find(s => s.name === 'losses')?.value || 0 : 0,
-                                    percentage: team.record ? team.record.items[0].stats.find(s => s.name === 'winPercent')?.displayValue || '.000' : '.000'
-                                };
-                                standings[conference].push(teamData);
-                            }
+                    if (conference.standings && conference.standings.entries && conference.standings.entries.length > 0) {
+                        for (const entry of conference.standings.entries) {
+                            const team = entry.team;
+                            const stats = entry.stats || [];
+                            
+                            const wins = stats.find(s => s.name === 'wins')?.value || 0;
+                            const losses = stats.find(s => s.name === 'losses')?.value || 0;
+                            const winPercent = stats.find(s => s.name === 'winPercent')?.value || 0;
+                            
+                            const teamData = {
+                                name: team.displayName,
+                                abbreviation: team.abbreviation,
+                                wins: wins,
+                                losses: losses,
+                                percentage: winPercent
+                            };
+                            standings[conferenceName].push(teamData);
+                            console.log('添加球队:', teamData.name, '到', conferenceName);
                         }
                     }
-                    
-                    // 按胜率排序
-                    standings.eastern.sort((a, b) => {
-                        const pa = parseFloat(a.percentage) || 0;
-                        const pb = parseFloat(b.percentage) || 0;
-                        return pb - pa;
-                    });
-                    
-                    standings.western.sort((a, b) => {
-                        const pa = parseFloat(a.percentage) || 0;
-                        const pb = parseFloat(b.percentage) || 0;
-                        return pb - pa;
-                    });
                 }
+                
+                // 按胜率排序
+                standings.eastern.sort((a, b) => b.percentage - a.percentage);
+                standings.western.sort((a, b) => b.percentage - a.percentage);
             }
         }
     } catch (error) {
-        console.error('获取排名失败:', error);
-        // 使用模拟数据作为备用
-        standings.eastern = generateMockStandings('eastern');
-        standings.western = generateMockStandings('western');
+        console.error('获取真实排名失败:', error);
     }
     
-    console.log('最终排名数据:', standings);
+    console.log('最终真实排名数据:', standings);
     return standings;
-}
-
-// 生成模拟排名数据
-function generateMockStandings(conference) {
-    const teams = conference === 'eastern' ? [
-        { name: 'Boston Celtics', abbreviation: 'bos', wins: 48, losses: 12 },
-        { name: 'Milwaukee Bucks', abbreviation: 'mil', wins: 45, losses: 15 },
-        { name: 'Philadelphia 76ers', abbreviation: 'phi', wins: 42, losses: 18 },
-        { name: 'Cleveland Cavaliers', abbreviation: 'cle', wins: 40, losses: 20 },
-        { name: 'New York Knicks', abbreviation: 'ny', wins: 38, losses: 22 },
-        { name: 'Miami Heat', abbreviation: 'mia', wins: 36, losses: 24 },
-        { name: 'Brooklyn Nets', abbreviation: 'bkn', wins: 34, losses: 26 },
-        { name: 'Indiana Pacers', abbreviation: 'ind', wins: 32, losses: 28 },
-        { name: 'Atlanta Hawks', abbreviation: 'atl', wins: 30, losses: 30 },
-        { name: 'Chicago Bulls', abbreviation: 'chi', wins: 28, losses: 32 },
-        { name: 'Orlando Magic', abbreviation: 'orl', wins: 26, losses: 34 },
-        { name: 'Toronto Raptors', abbreviation: 'tor', wins: 24, losses: 36 },
-        { name: 'Washington Wizards', abbreviation: 'wsh', wins: 22, losses: 38 },
-        { name: 'Charlotte Hornets', abbreviation: 'cha', wins: 20, losses: 40 },
-        { name: 'Detroit Pistons', abbreviation: 'det', wins: 18, losses: 42 }
-    ] : [
-        { name: 'Oklahoma City Thunder', abbreviation: 'okc', wins: 47, losses: 13 },
-        { name: 'Denver Nuggets', abbreviation: 'den', wins: 44, losses: 16 },
-        { name: 'Minnesota Timberwolves', abbreviation: 'min', wins: 43, losses: 17 },
-        { name: 'LA Clippers', abbreviation: 'lac', wins: 41, losses: 19 },
-        { name: 'Dallas Mavericks', abbreviation: 'dal', wins: 39, losses: 21 },
-        { name: 'Phoenix Suns', abbreviation: 'phx', wins: 37, losses: 23 },
-        { name: 'Los Angeles Lakers', abbreviation: 'lal', wins: 35, losses: 25 },
-        { name: 'Sacramento Kings', abbreviation: 'sac', wins: 33, losses: 27 },
-        { name: 'Golden State Warriors', abbreviation: 'gs', wins: 31, losses: 29 },
-        { name: 'New Orleans Pelicans', abbreviation: 'no', wins: 29, losses: 31 },
-        { name: 'Utah Jazz', abbreviation: 'utah', wins: 27, losses: 33 },
-        { name: 'Houston Rockets', abbreviation: 'hou', wins: 25, losses: 35 },
-        { name: 'Memphis Grizzlies', abbreviation: 'mem', wins: 23, losses: 37 },
-        { name: 'Portland Trail Blazers', abbreviation: 'por', wins: 21, losses: 39 },
-        { name: 'San Antonio Spurs', abbreviation: 'sa', wins: 19, losses: 41 }
-    ];
-    
-    return teams.map(team => ({
-        ...team,
-        percentage: (team.wins / (team.wins + team.losses)).toFixed(3)
-    }));
 }
 
 // 渲染排名
