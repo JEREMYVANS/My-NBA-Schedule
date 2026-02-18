@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA赛程速览</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nba: {
+                            primary: '#17408B', // NBA官方蓝色
+                            secondary: '#C8102E', // NBA官方红色
+                            dark: '#000000',
+                            light: '#FFFFFF',
+                            gray: '#F5F5F5',
+                            accent: '#FFD700' // 金色强调色
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Montserrat', 'sans-serif'],
+                        body: ['Inter', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'nba': '0 4px 20px rgba(0, 0, 0, 0.15)',
+                        'nba-hover': '0 8px 30px rgba(0, 0, 0, 0.25)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .bg-gradient-nba {
+                background: linear-gradient(135deg, #17408B 0%, #0C2461 100%);
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .animate-fade-in {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            .animate-slide-up {
+                animation: slideUp 0.5s ease-out;
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            .hover-scale {
+                transition: transform 0.3s ease;
+            }
+            .hover-scale:hover {
+                transform: scale(1.02);
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+
+    </style>
+    <!-- 引入Google字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-nba-gray font-body text-nba-dark min-h-screen">
+
+
+    <!-- 头部导航栏 -->
+    <header class="bg-gradient-nba text-nba-light shadow-md sticky top-0 z-50 animate-fade-in">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa fa-basketball-ball text-3xl text-nba-accent"></i>
+                <h1 id="page-title" class="text-2xl md:text-3xl font-display font-bold text-shadow">NBA赛程速览</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <select id="language-select" class="bg-white/10 text-white px-4 py-2 rounded-lg border border-white/20 cursor-pointer hover:bg-white/20 transition-all-300">
+                        <option value="zh" class="text-gray-800">中文</option>
+                        <option value="en" class="text-gray-800">English</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="container mx-auto px-4 py-8 animate-slide-up">
+        <!-- 左右布局 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 左侧：日历 -->
+            <div class="lg:col-span-1">
+                <div class="bg-nba-light rounded-xl shadow-nba p-6 sticky top-24">
+                    <h2 id="select-date-title" class="text-xl font-display font-bold mb-4 text-nba-primary">选择日期</h2>
+                    <div class="flex flex-col items-center">
+                        <!-- 日历组件 -->
+                        <div class="w-full">
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-md">
+                                <!-- 月份和年份 -->
+                                <div class="flex justify-between items-center mb-6">
+                                    <button id="prev-month" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-full transition-all-300">
+                                        <i class="fa fa-chevron-left text-gray-700"></i>
+                                    </button>
+                                    <h3 id="calendar-title" class="text-xl font-bold text-nba-primary"></h3>
+                                    <button id="next-month" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-full transition-all-300">
+                                        <i class="fa fa-chevron-right text-gray-700"></i>
+                                    </button>
+                                </div>
+                                <!-- 星期标题 -->
+                            <div class="grid grid-cols-7 gap-2 mb-4 week-header">
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">日</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">一</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">二</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">三</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">四</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">五</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">六</div>
+                            </div>
+                                <!-- 日期网格 -->
+                                <div id="calendar-days" class="grid grid-cols-7 gap-2"></div>
+                            </div>
+                        </div>
+                        <!-- 已选日期显示 -->
+                        <div class="mt-4 text-center">
+                            <p class="text-sm text-gray-600"><span id="selected-label">已选择：</span><span id="selected-date-display" class="font-medium text-nba-primary"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：赛程 -->
+            <div class="lg:col-span-2">
+                <div class="bg-nba-light rounded-xl shadow-nba p-6 min-h-[500px]">
+                    <h2 id="schedule-title" class="text-xl font-display font-bold mb-6 text-nba-primary">赛程</h2>
+                    
+                    <!-- 赛程列表 -->
+                    <div id="schedule-container" class="space-y-4">
+                        <!-- 赛程项将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-nba-dark text-nba-light py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                    <i class="fa fa-basketball-ball text-2xl text-nba-accent"></i>
+                    <h3 id="footer-title" class="text-xl font-display font-bold">NBA赛程速览</h3>
+                </div>
+                <div id="footer-text" class="text-sm text-gray-400">
+                    © 2026 NBA赛程应用 | 数据仅供参考
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript文件 -->
+    <script src="app.js"></script>
+</body>
+</html>
