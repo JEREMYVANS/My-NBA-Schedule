@@ -419,29 +419,29 @@ function renderSchedule(schedule, selectedDateInput) {
     // 渲染每一场比赛
     schedule.forEach((game, index) => {
         const gameSection = document.createElement('div');
-        gameSection.className = 'bg-gray-50 rounded-lg p-6 hover:shadow-md transition-all-300 border border-gray-100 hover-scale animate-slide-up';
+        gameSection.className = 'bg-gray-50 rounded-lg p-4 md:p-6 hover:shadow-md transition-all-300 border border-gray-100 hover-scale animate-slide-up';
         gameSection.style.animationDelay = `${index * 0.1}s`;
         
         gameSection.innerHTML = `
             <div class="flex justify-between items-center mb-4">
-                <span class="text-sm text-gray-500">${game.venue}</span>
-                <span class="text-sm font-medium">${game.time}</span>
+                <span class="text-xs md:text-sm text-gray-500 truncate flex-1 pr-2">${game.venue}</span>
+                <span class="text-xs md:text-sm font-medium whitespace-nowrap">${game.time}</span>
             </div>
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-4 flex-1">
-                    <div class="flex items-center space-x-3">
-                        <img src="${getTeamLogo(game.awayTeam.abbreviation)}" alt="${game.awayTeam.name}" class="w-12 h-12 object-contain" onerror="this.style.display='none'">
-                        <span class="font-medium">${game.awayTeam.name}</span>
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
+                <div class="flex items-center space-x-3 flex-1 w-full md:w-auto">
+                    <img src="${getTeamLogo(game.awayTeam.abbreviation)}" alt="${game.awayTeam.name}" class="w-8 h-8 md:w-12 md:h-12 object-contain flex-shrink-0" onerror="this.style.display='none'">
+                    <div class="flex-1 min-w-0">
+                        <span class="font-medium text-sm md:text-base">${game.awayTeam.name}</span>
                     </div>
-                    <div class="text-2xl font-bold text-nba-primary">${game.awayScore}</div>
+                    <div class="text-xl md:text-2xl font-bold text-nba-primary flex-shrink-0">${game.awayScore}</div>
                 </div>
-                <div class="text-xl font-bold text-gray-300 mx-4">VS</div>
-                <div class="flex items-center space-x-4 flex-1 justify-end">
-                    <div class="text-2xl font-bold text-nba-secondary">${game.homeScore}</div>
-                    <div class="flex items-center space-x-3">
-                        <span class="font-medium">${game.homeTeam.name}</span>
-                        <img src="${getTeamLogo(game.homeTeam.abbreviation)}" alt="${game.homeTeam.name}" class="w-12 h-12 object-contain" onerror="this.style.display='none'">
+                <div class="text-lg md:text-xl font-bold text-gray-300 flex-shrink-0">VS</div>
+                <div class="flex items-center space-x-3 flex-1 w-full md:w-auto justify-end">
+                    <div class="text-xl md:text-2xl font-bold text-nba-secondary flex-shrink-0">${game.homeScore}</div>
+                    <div class="flex-1 min-w-0 text-right">
+                        <span class="font-medium text-sm md:text-base">${game.homeTeam.name}</span>
                     </div>
+                    <img src="${getTeamLogo(game.homeTeam.abbreviation)}" alt="${game.homeTeam.name}" class="w-8 h-8 md:w-12 md:h-12 object-contain flex-shrink-0" onerror="this.style.display='none'">
                 </div>
             </div>
         `;
