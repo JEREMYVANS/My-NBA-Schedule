@@ -1,6 +1,14 @@
 // 获取球队LOGO
 function getTeamLogo(abbreviation) {
-    return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/${abbreviation.toLowerCase()}.png&h=100&w=100`;
+    // 处理特殊球队的缩写
+    const logoMap = {
+        'NOP': 'no', // New Orleans Pelicans
+        'UTAH': 'utah', // Utah Jazz (有些API用UTAH)
+        'UTA': 'utah'  // Utah Jazz
+    };
+    
+    const logoAbbr = logoMap[abbreviation.toUpperCase()] || abbreviation.toLowerCase();
+    return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/${logoAbbr}.png&h=100&w=100`;
 }
 
 // 国际化资源
@@ -10,6 +18,8 @@ const translations = {
         selectDate: '选择日期',
         selectedLabel: '已选择：',
         schedule: '赛程',
+        easternConference: '东部排名',
+        westernConference: '西部排名',
         noSchedule: '该日无赛程',
         footerTitle: 'NBA赛程速览',
         footerText: '© 2026 NBA赛程应用 | 数据仅供参考',
@@ -22,6 +32,8 @@ const translations = {
         selectDate: 'Select Date',
         selectedLabel: 'Selected: ',
         schedule: 'Schedule',
+        easternConference: 'Eastern Conference',
+        westernConference: 'Western Conference',
         noSchedule: 'No games scheduled',
         footerTitle: 'NBA Schedule',
         footerText: '© 2026 NBA Schedule App | Data for reference only',
@@ -113,6 +125,17 @@ function updateUI() {
     document.getElementById('footer-title').textContent = t('footerTitle');
     document.getElementById('footer-text').textContent = t('footerText');
     
+    // 更新排名标题
+    const easternTitle = document.getElementById('eastern-title');
+    if (easternTitle) {
+        easternTitle.innerHTML = `<i class="fa fa-map-marker mr-2 text-nba-secondary"></i>${t('easternConference')}`;
+    }
+    
+    const westernTitle = document.getElementById('western-title');
+    if (westernTitle) {
+        westernTitle.innerHTML = `<i class="fa fa-map-marker mr-2 text-nba-primary"></i>${t('westernConference')}`;
+    }
+    
     document.title = t('pageTitle');
 }
 
@@ -172,7 +195,7 @@ function renderCalendar() {
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = 0; i < startDay; i++) {
         const dayDiv = document.createElement('div');
-        dayDiv.className = 'text-center py-4 text-gray-300 text-sm bg-gray-50 rounded-lg';
+        dayDiv.className = 'text-center py-4 text-gray-300 text-sm bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-600';
         dayDiv.textContent = prevMonthLastDay - (startDay - i - 1);
         calendarDays.appendChild(dayDiv);
     }
@@ -191,11 +214,11 @@ function renderCalendar() {
         selectedDateTemp.setHours(0, 0, 0, 0);
         const isSelected = currentDate.getTime() === selectedDateTemp.getTime();
         
-        let className = 'text-center py-4 rounded-lg cursor-pointer transition-all-300 hover:bg-gray-100 font-medium';
+        let className = 'text-center py-4 rounded-lg cursor-pointer transition-all-300 hover:bg-gray-100 font-medium dark:hover:bg-gray-700 dark:text-gray-300';
         if (isSelected) {
             className = 'text-center py-4 rounded-lg cursor-pointer transition-all-300 bg-nba-primary text-white font-bold shadow-md';
         } else if (isToday) {
-            className = 'text-center py-4 rounded-lg cursor-pointer transition-all-300 bg-nba-secondary bg-opacity-20 text-nba-secondary font-bold border-2 border-nba-secondary';
+            className = 'text-center py-4 rounded-lg cursor-pointer transition-all-300 bg-nba-secondary bg-opacity-20 text-nba-secondary font-bold border-2 border-nba-secondary dark:bg-opacity-40';
         }
         
         dayDiv.className = className;
@@ -229,7 +252,7 @@ function renderCalendar() {
     if (remainingDays > 0) {
         for (let day = 1; day <= remainingDays; day++) {
             const dayDiv = document.createElement('div');
-            dayDiv.className = 'text-center py-4 text-gray-300 text-sm bg-gray-50 rounded-lg';
+            dayDiv.className = 'text-center py-4 text-gray-300 text-sm bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-600';
             dayDiv.textContent = day;
             calendarDays.appendChild(dayDiv);
         }
@@ -409,8 +432,8 @@ function renderSchedule(schedule, selectedDateInput) {
     
     if (schedule.length === 0) {
         container.innerHTML += `
-            <div class="bg-gray-50 rounded-lg p-4 border border-gray-100 animate-fade-in">
-                <p class="text-center py-8 text-gray-500">${t('noSchedule')}</p>
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-100 animate-fade-in dark:bg-nba-dark-gray dark:border-gray-700">
+                <p class="text-center py-8 text-gray-500 dark:text-gray-400">${t('noSchedule')}</p>
             </div>
         `;
         return;
@@ -419,29 +442,27 @@ function renderSchedule(schedule, selectedDateInput) {
     // 渲染每一场比赛
     schedule.forEach((game, index) => {
         const gameSection = document.createElement('div');
-        gameSection.className = 'bg-gray-50 rounded-lg p-4 md:p-6 hover:shadow-md transition-all-300 border border-gray-100 hover-scale animate-slide-up';
+        gameSection.className = 'bg-gray-50 rounded-lg p-4 md:p-6 hover:shadow-md transition-all-300 border border-gray-100 hover-scale animate-slide-up dark:bg-nba-dark-gray dark:border-gray-700';
         gameSection.style.animationDelay = `${index * 0.1}s`;
         
         gameSection.innerHTML = `
-            <div class="flex justify-between items-center mb-4">
-                <span class="text-xs md:text-sm text-gray-500 truncate flex-1 pr-2">${game.venue}</span>
+            <div class="flex justify-end items-center mb-4">
                 <span class="text-xs md:text-sm font-medium whitespace-nowrap">${game.time}</span>
             </div>
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
-                <div class="flex items-center space-x-3 flex-1 w-full md:w-auto">
-                    <img src="${getTeamLogo(game.awayTeam.abbreviation)}" alt="${game.awayTeam.name}" class="w-8 h-8 md:w-12 md:h-12 object-contain flex-shrink-0" onerror="this.style.display='none'">
-                    <div class="flex-1 min-w-0">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <img src="${getTeamLogo(game.awayTeam.abbreviation)}" alt="${game.awayTeam.name}" class="w-8 h-8 md:w-10 md:h-10 object-contain flex-shrink-0" onerror="this.style.display='none'">
                         <span class="font-medium text-sm md:text-base">${game.awayTeam.name}</span>
                     </div>
-                    <div class="text-xl md:text-2xl font-bold text-nba-primary flex-shrink-0">${game.awayScore}</div>
+                    <div class="text-xl md:text-2xl font-bold text-nba-primary">${game.awayScore}</div>
                 </div>
-                <div class="text-lg md:text-xl font-bold text-gray-300 flex-shrink-0">VS</div>
-                <div class="flex items-center space-x-3 flex-1 w-full md:w-auto justify-end">
-                    <div class="text-xl md:text-2xl font-bold text-nba-secondary flex-shrink-0">${game.homeScore}</div>
-                    <div class="flex-1 min-w-0 text-right">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <img src="${getTeamLogo(game.homeTeam.abbreviation)}" alt="${game.homeTeam.name}" class="w-8 h-8 md:w-10 md:h-10 object-contain flex-shrink-0" onerror="this.style.display='none'">
                         <span class="font-medium text-sm md:text-base">${game.homeTeam.name}</span>
                     </div>
-                    <img src="${getTeamLogo(game.homeTeam.abbreviation)}" alt="${game.homeTeam.name}" class="w-8 h-8 md:w-12 md:h-12 object-contain flex-shrink-0" onerror="this.style.display='none'">
+                    <div class="text-xl md:text-2xl font-bold text-nba-secondary">${game.homeScore}</div>
                 </div>
             </div>
         `;
@@ -452,11 +473,208 @@ function renderSchedule(schedule, selectedDateInput) {
     console.log('赛程渲染完成');
 }
 
+// 获取 NBA 排名数据
+async function getStandings() {
+    console.log('开始获取 NBA 排名数据');
+    const standings = {
+        eastern: [],
+        western: []
+    };
+    
+    try {
+        const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+        console.log('请求排名 URL:', url);
+        
+        const response = await fetch(url);
+        console.log('排名响应状态:', response.status);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // 尝试从 ESPN API 获取排名数据
+            // 我们使用另一个专门的排名 API 端点
+            const standingsUrl = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams';
+            const standingsResponse = await fetch(standingsUrl);
+            
+            if (standingsResponse.ok) {
+                const standingsData = await standingsResponse.json();
+                
+                if (standingsData.sports && standingsData.sports[0] && standingsData.sports[0].leagues && standingsData.sports[0].leagues[0]) {
+                    const divisions = standingsData.sports[0].leagues[0].divisions;
+                    
+                    for (const division of divisions) {
+                        const conference = division.name.includes('East') ? 'eastern' : 'western';
+                        
+                        if (division.teams) {
+                            for (const team of division.teams) {
+                                const teamData = {
+                                    name: team.team.displayName,
+                                    abbreviation: team.team.abbreviation,
+                                    wins: team.record ? team.record.items[0].stats.find(s => s.name === 'wins')?.value || 0 : 0,
+                                    losses: team.record ? team.record.items[0].stats.find(s => s.name === 'losses')?.value || 0 : 0,
+                                    percentage: team.record ? team.record.items[0].stats.find(s => s.name === 'winPercent')?.displayValue || '.000' : '.000'
+                                };
+                                standings[conference].push(teamData);
+                            }
+                        }
+                    }
+                    
+                    // 按胜率排序
+                    standings.eastern.sort((a, b) => {
+                        const pa = parseFloat(a.percentage) || 0;
+                        const pb = parseFloat(b.percentage) || 0;
+                        return pb - pa;
+                    });
+                    
+                    standings.western.sort((a, b) => {
+                        const pa = parseFloat(a.percentage) || 0;
+                        const pb = parseFloat(b.percentage) || 0;
+                        return pb - pa;
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('获取排名失败:', error);
+        // 使用模拟数据作为备用
+        standings.eastern = generateMockStandings('eastern');
+        standings.western = generateMockStandings('western');
+    }
+    
+    console.log('最终排名数据:', standings);
+    return standings;
+}
 
+// 生成模拟排名数据
+function generateMockStandings(conference) {
+    const teams = conference === 'eastern' ? [
+        { name: 'Boston Celtics', abbreviation: 'bos', wins: 48, losses: 12 },
+        { name: 'Milwaukee Bucks', abbreviation: 'mil', wins: 45, losses: 15 },
+        { name: 'Philadelphia 76ers', abbreviation: 'phi', wins: 42, losses: 18 },
+        { name: 'Cleveland Cavaliers', abbreviation: 'cle', wins: 40, losses: 20 },
+        { name: 'New York Knicks', abbreviation: 'ny', wins: 38, losses: 22 },
+        { name: 'Miami Heat', abbreviation: 'mia', wins: 36, losses: 24 },
+        { name: 'Brooklyn Nets', abbreviation: 'bkn', wins: 34, losses: 26 },
+        { name: 'Indiana Pacers', abbreviation: 'ind', wins: 32, losses: 28 },
+        { name: 'Atlanta Hawks', abbreviation: 'atl', wins: 30, losses: 30 },
+        { name: 'Chicago Bulls', abbreviation: 'chi', wins: 28, losses: 32 },
+        { name: 'Orlando Magic', abbreviation: 'orl', wins: 26, losses: 34 },
+        { name: 'Toronto Raptors', abbreviation: 'tor', wins: 24, losses: 36 },
+        { name: 'Washington Wizards', abbreviation: 'wsh', wins: 22, losses: 38 },
+        { name: 'Charlotte Hornets', abbreviation: 'cha', wins: 20, losses: 40 },
+        { name: 'Detroit Pistons', abbreviation: 'det', wins: 18, losses: 42 }
+    ] : [
+        { name: 'Oklahoma City Thunder', abbreviation: 'okc', wins: 47, losses: 13 },
+        { name: 'Denver Nuggets', abbreviation: 'den', wins: 44, losses: 16 },
+        { name: 'Minnesota Timberwolves', abbreviation: 'min', wins: 43, losses: 17 },
+        { name: 'LA Clippers', abbreviation: 'lac', wins: 41, losses: 19 },
+        { name: 'Dallas Mavericks', abbreviation: 'dal', wins: 39, losses: 21 },
+        { name: 'Phoenix Suns', abbreviation: 'phx', wins: 37, losses: 23 },
+        { name: 'Los Angeles Lakers', abbreviation: 'lal', wins: 35, losses: 25 },
+        { name: 'Sacramento Kings', abbreviation: 'sac', wins: 33, losses: 27 },
+        { name: 'Golden State Warriors', abbreviation: 'gs', wins: 31, losses: 29 },
+        { name: 'New Orleans Pelicans', abbreviation: 'no', wins: 29, losses: 31 },
+        { name: 'Utah Jazz', abbreviation: 'utah', wins: 27, losses: 33 },
+        { name: 'Houston Rockets', abbreviation: 'hou', wins: 25, losses: 35 },
+        { name: 'Memphis Grizzlies', abbreviation: 'mem', wins: 23, losses: 37 },
+        { name: 'Portland Trail Blazers', abbreviation: 'por', wins: 21, losses: 39 },
+        { name: 'San Antonio Spurs', abbreviation: 'sa', wins: 19, losses: 41 }
+    ];
+    
+    return teams.map(team => ({
+        ...team,
+        percentage: (team.wins / (team.wins + team.losses)).toFixed(3)
+    }));
+}
+
+// 渲染排名
+function renderStandings(standings) {
+    console.log('渲染排名', standings);
+    
+    // 渲染东部排名
+    const easternContainer = document.getElementById('eastern-conference');
+    easternContainer.innerHTML = '';
+    
+    standings.eastern.forEach((team, index) => {
+        const teamItem = document.createElement('div');
+        teamItem.className = 'flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all-300 dark:bg-nba-dark-gray dark:hover:bg-gray-700';
+        
+        teamItem.innerHTML = `
+            <div class="flex items-center space-x-2 flex-1 min-w-0">
+                <span class="font-bold text-sm w-6 text-center text-gray-700 dark:text-gray-300 flex-shrink-0">${index + 1}</span>
+                <img src="${getTeamLogo(team.abbreviation)}" alt="${team.name}" class="w-7 h-7 object-contain flex-shrink-0" onerror="this.style.display='none'">
+                <span class="font-medium text-xs truncate dark:text-gray-300">${team.name}</span>
+            </div>
+            <span class="font-semibold text-xs text-gray-700 dark:text-gray-300 flex-shrink-0 ml-2">${team.wins}-${team.losses}</span>
+        `;
+        
+        easternContainer.appendChild(teamItem);
+    });
+    
+    // 渲染西部排名
+    const westernContainer = document.getElementById('western-conference');
+    westernContainer.innerHTML = '';
+    
+    standings.western.forEach((team, index) => {
+        const teamItem = document.createElement('div');
+        teamItem.className = 'flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all-300 dark:bg-nba-dark-gray dark:hover:bg-gray-700';
+        
+        teamItem.innerHTML = `
+            <div class="flex items-center space-x-2 flex-1 min-w-0">
+                <span class="font-bold text-sm w-6 text-center text-gray-700 dark:text-gray-300 flex-shrink-0">${index + 1}</span>
+                <img src="${getTeamLogo(team.abbreviation)}" alt="${team.name}" class="w-7 h-7 object-contain flex-shrink-0" onerror="this.style.display='none'">
+                <span class="font-medium text-xs truncate dark:text-gray-300">${team.name}</span>
+            </div>
+            <span class="font-semibold text-xs text-gray-700 dark:text-gray-300 flex-shrink-0 ml-2">${team.wins}-${team.losses}</span>
+        `;
+        
+        westernContainer.appendChild(teamItem);
+    });
+    
+    console.log('排名渲染完成');
+}
+
+// 切换夜间模式
+function toggleDarkMode() {
+    const htmlElement = document.documentElement;
+    const isDark = htmlElement.classList.toggle('dark');
+    
+    // 更新图标
+    const icon = document.querySelector('#dark-mode-toggle i');
+    if (isDark) {
+        icon.className = 'fa fa-sun-o text-xl';
+        localStorage.setItem('darkMode', 'true');
+    } else {
+        icon.className = 'fa fa-moon-o text-xl';
+        localStorage.setItem('darkMode', 'false');
+    }
+}
+
+// 初始化夜间模式
+function initDarkMode() {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    const htmlElement = document.documentElement;
+    const icon = document.querySelector('#dark-mode-toggle i');
+    
+    if (savedDarkMode === 'true') {
+        htmlElement.classList.add('dark');
+        if (icon) {
+            icon.className = 'fa fa-sun-o text-xl';
+        }
+    } else {
+        htmlElement.classList.remove('dark');
+        if (icon) {
+            icon.className = 'fa fa-moon-o text-xl';
+        }
+    }
+}
 
 // 初始化应用
 function initApp() {
     console.log('应用初始化开始');
+    
+    // 初始化夜间模式
+    initDarkMode();
     
     // 从localStorage读取语言设置
     const savedLanguage = localStorage.getItem('nbaLanguage');
@@ -475,6 +693,11 @@ function initApp() {
     
     // 渲染日历
     renderCalendar();
+    
+    // 绑定夜间模式切换
+    document.getElementById('dark-mode-toggle').addEventListener('click', function() {
+        toggleDarkMode();
+    });
     
     // 绑定语言选择器
     document.getElementById('language-select').addEventListener('change', async function() {
@@ -508,8 +731,28 @@ function initApp() {
         }
     }
     
+    // 加载并渲染排名
+    async function loadStandings() {
+        console.log('开始加载排名');
+        try {
+            const standings = await getStandings();
+            renderStandings(standings);
+            console.log('排名渲染完成');
+        } catch (error) {
+            console.error('加载排名失败:', error);
+            const mockStandings = {
+                eastern: generateMockStandings('eastern'),
+                western: generateMockStandings('western')
+            };
+            renderStandings(mockStandings);
+        }
+    }
+    
     console.log('调用loadInitialSchedule');
     loadInitialSchedule();
+    
+    console.log('调用loadStandings');
+    loadStandings();
     
     console.log('应用初始化完成');
 }

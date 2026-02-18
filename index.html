@@ -11,6 +11,7 @@
     <!-- 配置Tailwind自定义主题 -->
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -20,6 +21,10 @@
                             dark: '#000000',
                             light: '#FFFFFF',
                             gray: '#F5F5F5',
+                            'dark-bg': '#121212',
+                            'dark-card': '#1E1E1E',
+                            'dark-text': '#E0E0E0',
+                            'dark-gray': '#2D2D2D',
                             accent: '#FFD700' // 金色强调色
                         }
                     },
@@ -29,7 +34,8 @@
                     },
                     boxShadow: {
                         'nba': '0 4px 20px rgba(0, 0, 0, 0.15)',
-                        'nba-hover': '0 8px 30px rgba(0, 0, 0, 0.25)'
+                        'nba-hover': '0 8px 30px rgba(0, 0, 0, 0.25)',
+                        'nba-dark': '0 4px 20px rgba(0, 0, 0, 0.4)'
                     }
                 }
             }
@@ -99,17 +105,20 @@
     <!-- 引入Google字体 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="bg-nba-gray font-body text-nba-dark min-h-screen">
+<body class="bg-nba-gray font-body text-nba-dark min-h-screen dark:bg-nba-dark-bg dark:text-nba-dark-text">
 
 
     <!-- 头部导航栏 -->
-    <header class="bg-gradient-nba text-nba-light shadow-md sticky top-0 z-50 animate-fade-in">
+    <header class="bg-gradient-nba text-nba-light shadow-md sticky top-0 z-50 animate-fade-in dark:from-gray-900 dark:to-gray-800 dark:bg-none dark:bg-gray-900">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <i class="fa fa-basketball-ball text-3xl text-nba-accent"></i>
                 <h1 id="page-title" class="text-2xl md:text-3xl font-display font-bold text-shadow">NBA赛程速览</h1>
             </div>
             <div class="flex items-center space-x-4">
+                <button id="dark-mode-toggle" class="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-all-300">
+                    <i class="fa fa-moon-o text-xl"></i>
+                </button>
                 <div class="relative">
                     <select id="language-select" class="bg-white/10 text-white px-4 py-2 rounded-lg border border-white/20 cursor-pointer hover:bg-white/20 transition-all-300">
                         <option value="zh" class="text-gray-800">中文</option>
@@ -123,34 +132,34 @@
     <!-- 主内容区域 -->
     <main class="container mx-auto px-4 py-8 animate-slide-up">
         <!-- 左右布局 -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <!-- 左侧：日历 -->
             <div class="lg:col-span-1">
-                <div class="bg-nba-light rounded-xl shadow-nba p-6 sticky top-24">
+                <div class="bg-nba-light rounded-xl shadow-nba p-6 sticky top-24 dark:bg-nba-dark-card dark:shadow-nba-dark">
                     <h2 id="select-date-title" class="text-xl font-display font-bold mb-4 text-nba-primary">选择日期</h2>
                     <div class="flex flex-col items-center">
                         <!-- 日历组件 -->
                         <div class="w-full">
-                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-md">
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-md dark:bg-nba-dark-gray dark:border-gray-700">
                                 <!-- 月份和年份 -->
                                 <div class="flex justify-between items-center mb-6">
-                                    <button id="prev-month" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-full transition-all-300">
-                                        <i class="fa fa-chevron-left text-gray-700"></i>
+                                    <button id="prev-month" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-full transition-all-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                                        <i class="fa fa-chevron-left text-gray-700 dark:text-gray-300"></i>
                                     </button>
                                     <h3 id="calendar-title" class="text-xl font-bold text-nba-primary"></h3>
-                                    <button id="next-month" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-full transition-all-300">
-                                        <i class="fa fa-chevron-right text-gray-700"></i>
+                                    <button id="next-month" class="p-3 bg-gray-50 hover:bg-gray-100 rounded-full transition-all-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                                        <i class="fa fa-chevron-right text-gray-700 dark:text-gray-300"></i>
                                     </button>
                                 </div>
                                 <!-- 星期标题 -->
                             <div class="grid grid-cols-7 gap-2 mb-4 week-header">
-                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">日</div>
-                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">一</div>
-                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">二</div>
-                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">三</div>
-                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">四</div>
-                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">五</div>
-                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg">六</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-400">日</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-400">一</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-400">二</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-400">三</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-400">四</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-400">五</div>
+                                <div class="text-center text-sm font-semibold text-gray-500 py-3 bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-400">六</div>
                             </div>
                                 <!-- 日期网格 -->
                                 <div id="calendar-days" class="grid grid-cols-7 gap-2"></div>
@@ -164,9 +173,9 @@
                 </div>
             </div>
 
-            <!-- 右侧：赛程 -->
+            <!-- 中间：赛程 -->
             <div class="lg:col-span-2">
-                <div class="bg-nba-light rounded-xl shadow-nba p-6 min-h-[500px]">
+                <div class="bg-nba-light rounded-xl shadow-nba p-6 min-h-[500px] dark:bg-nba-dark-card dark:shadow-nba-dark">
                     <h2 id="schedule-title" class="text-xl font-display font-bold mb-6 text-nba-primary">赛程</h2>
                     
                     <!-- 赛程列表 -->
@@ -175,11 +184,36 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 右侧：排名 -->
+            <div class="lg:col-span-1">
+                <div class="space-y-6">
+                    <!-- 东部排名 -->
+                    <div class="bg-nba-light rounded-xl shadow-nba p-6 dark:bg-nba-dark-card dark:shadow-nba-dark">
+                        <h2 id="eastern-title" class="text-xl font-display font-bold mb-4 text-nba-primary">
+                            <i class="fa fa-map-marker mr-2 text-nba-secondary"></i>东部排名
+                        </h2>
+                        <div id="eastern-conference" class="space-y-2">
+                            <!-- 东部排名将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 西部排名 -->
+                    <div class="bg-nba-light rounded-xl shadow-nba p-6 dark:bg-nba-dark-card dark:shadow-nba-dark">
+                        <h2 id="western-title" class="text-xl font-display font-bold mb-4 text-nba-primary">
+                            <i class="fa fa-map-marker mr-2 text-nba-primary"></i>西部排名
+                        </h2>
+                        <div id="western-conference" class="space-y-2">
+                            <!-- 西部排名将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
     <!-- 页脚 -->
-    <footer class="bg-nba-dark text-nba-light py-8">
+    <footer class="bg-nba-dark text-nba-light py-8 dark:bg-gray-950">
         <div class="container mx-auto px-4">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="flex items-center space-x-3 mb-4 md:mb-0">
