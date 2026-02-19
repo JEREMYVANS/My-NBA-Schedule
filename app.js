@@ -46,22 +46,31 @@ const translations = {
 // 当前语言
 let currentLanguage = 'zh';
 
-// 日历相关变量
-let currentCalendarDate = new Date();
-let selectedDate = new Date();
+// 日历相关变量 - 使用UTC日期
+const today = new Date();
+let currentCalendarDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+let selectedDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
-// 工具函数：解析日期字符串为本地日期对象
+// 工具函数：解析日期字符串为日期对象（纯日期，忽略时区）
 function parseDate(dateStr) {
     const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day));
 }
 
-// 工具函数：格式化日期为本地字符串（YYYY-MM-DD）
+// 工具函数：格式化日期为字符串（YYYY-MM-DD），使用UTC日期
 function formatDateStr(date) {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = date.getUTCDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+// 工具函数：将日期格式化为YYYYMMDD（用于API请求）
+function formatDateForAPI(date) {
+    const year = date.getUTCFullYear();
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = date.getUTCDate().toString().padStart(2, '0');
+    return `${year}${month}${day}`;
 }
 
 // 获取翻译文本
@@ -132,9 +141,9 @@ function renderCalendar() {
         return;
     }
     
-    // 设置标题
-    const year = currentCalendarDate.getFullYear();
-    const month = currentCalendarDate.getMonth();
+    // 设置标题 - 使用UTC日期
+    const year = currentCalendarDate.getUTCFullYear();
+    const month = currentCalendarDate.getUTCMonth();
     const monthNames = translations[currentLanguage].monthNames;
     const weekDays = translations[currentLanguage].weekDays;
     
@@ -153,19 +162,20 @@ function renderCalendar() {
     // 清空日历
     calendarDays.innerHTML = '';
     
-    // 获取当月第一天
-    const firstDay = new Date(year, month, 1);
-    // 获取当月最后一天
-    const lastDay = new Date(year, month + 1, 0);
+    // 获取当月第一天（UTC）
+    const firstDay = new Date(Date.UTC(year, month, 1));
+    // 获取当月最后一天（UTC）
+    const lastDay = new Date(Date.UTC(year, month + 1, 0));
     
-    // 获取第一天是星期几（0 = 周日）
-    const startDay = firstDay.getDay();
+    // 获取第一天是星期几（0 = 周日）- 需要转换为本地时间来正确显示星期
+    const startDay = new Date(firstDay.getTime()).getDay();
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 今天（本地日期转换为UTC）
+    const localToday = new Date();
+    const todayUTC = new Date(Date.UTC(localToday.getFullYear(), localToday.getMonth(), localToday.getDate()));
     
     // 添加上个月的填充日期
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    const prevMonthLastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
     for (let i = 0; i < startDay; i++) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'text-center py-4 text-gray-300 text-sm bg-gray-50 rounded-lg dark:bg-gray-800 dark:text-gray-600';
@@ -174,18 +184,12 @@ function renderCalendar() {
     }
     
     // 添加当月的日期
-    for (let day = 1; day <= lastDay.getDate(); day++) {
+    for (let day = 1; day <= lastDay.getUTCDate(); day++) {
         const dayDiv = document.createElement('div');
-        const currentDate = new Date(year, month, day);
-        currentDate.setHours(0, 0, 0, 0);
+        const currentDateUTC = new Date(Date.UTC(year, month, day));
         
-        const todayTemp = new Date();
-        todayTemp.setHours(0, 0, 0, 0);
-        const isToday = currentDate.getTime() === todayTemp.getTime();
-        
-        const selectedDateTemp = new Date(selectedDate);
-        selectedDateTemp.setHours(0, 0, 0, 0);
-        const isSelected = currentDate.getTime() === selectedDateTemp.getTime();
+        const isToday = currentDateUTC.getTime() === todayUTC.getTime();
+        const isSelected = currentDateUTC.getTime() === selectedDate.getTime();
         
         let className = 'text-center py-4 rounded-lg cursor-pointer transition-all-300 hover:bg-gray-100 font-medium dark:hover:bg-gray-700 dark:text-gray-300';
         if (isSelected) {
@@ -196,7 +200,7 @@ function renderCalendar() {
         
         dayDiv.className = className;
         dayDiv.textContent = day;
-        dayDiv.dataset.date = formatDateStr(currentDate);
+        dayDiv.dataset.date = formatDateStr(currentDateUTC);
         dayDiv.style.fontSize = '16px';
         dayDiv.style.minHeight = '48px';
         dayDiv.style.display = 'flex';
@@ -209,7 +213,6 @@ function renderCalendar() {
             renderCalendar();
             updateSelectedDateDisplay();
             
-            // 直接加载赛程
             const newSchedule = await generateSchedule(selectedDate);
             renderSchedule(newSchedule, selectedDate);
         });
@@ -218,8 +221,8 @@ function renderCalendar() {
     }
     
     // 添加下个月的填充日期 - 只显示5行（35天）
-    const totalDays = startDay + lastDay.getDate();
-    const remainingDays = 35 - totalDays; // 5行 * 7列
+    const totalDays = startDay + lastDay.getUTCDate();
+    const remainingDays = 35 - totalDays;
     if (remainingDays > 0) {
         for (let day = 1; day <= remainingDays; day++) {
             const dayDiv = document.createElement('div');
@@ -243,70 +246,86 @@ async function generateSchedule(selectedDateInput) {
     const schedule = [];
     
     const targetDate = parseDate(formatDateStr(new Date(selectedDateInput)));
+    const targetDateStr = formatDateStr(targetDate);
     
     try {
-        const year = targetDate.getFullYear();
-        const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
-        const day = targetDate.getDate().toString().padStart(2, '0');
-        const formattedDate = `${year}${month}${day}`;
+        const fetchStart = new Date(targetDate);
+        fetchStart.setUTCDate(fetchStart.getUTCDate() - 1);
         
-        const response = await fetch(`/api/schedule?date=${formattedDate}`);
+        const fetchEnd = new Date(targetDate);
+        fetchEnd.setUTCDate(fetchEnd.getUTCDate() + 1);
         
-        if (response.ok) {
-            const data = await response.json();
+        const fetchDate = new Date(fetchStart);
+        
+        while (fetchDate <= fetchEnd) {
+            const formattedDate = formatDateForAPI(fetchDate);
             
-            if (data.events) {
-                for (const event of data.events) {
-                    const localDate = new Date(event.date);
-                    const timeString = localDate.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    let homeTeam, awayTeam, homeScore, awayScore;
-                    if (event.competitions[0].competitors[0].homeAway === 'home') {
-                        homeTeam = {
-                            id: 0,
-                            name: event.competitions[0].competitors[0].team.displayName,
-                            abbreviation: event.competitions[0].competitors[0].team.abbreviation
-                        };
-                        awayTeam = {
-                            id: 0,
-                            name: event.competitions[0].competitors[1].team.displayName,
-                            abbreviation: event.competitions[0].competitors[1].team.abbreviation
-                        };
-                        homeScore = event.competitions[0].competitors[0].score || 0;
-                        awayScore = event.competitions[0].competitors[1].score || 0;
-                    } else {
-                        awayTeam = {
-                            id: 0,
-                            name: event.competitions[0].competitors[0].team.displayName,
-                            abbreviation: event.competitions[0].competitors[0].team.abbreviation
-                        };
-                        homeTeam = {
-                            id: 0,
-                            name: event.competitions[0].competitors[1].team.displayName,
-                            abbreviation: event.competitions[0].competitors[1].team.abbreviation
-                        };
-                        awayScore = event.competitions[0].competitors[0].score || 0;
-                        homeScore = event.competitions[0].competitors[1].score || 0;
+            const response = await fetch(`/api/schedule?date=${formattedDate}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.events) {
+                    for (const event of data.events) {
+                        const gameDateUTC = new Date(event.date);
+                        
+                        const gameDateStrUTC = `${gameDateUTC.getUTCFullYear()}-${(gameDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}-${gameDateUTC.getUTCDate().toString().padStart(2, '0')}`;
+                        
+                        if (gameDateStrUTC === targetDateStr) {
+                            const localDate = new Date(event.date);
+                            const timeString = localDate.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            
+                            let homeTeam, awayTeam, homeScore, awayScore;
+                            if (event.competitions[0].competitors[0].homeAway === 'home') {
+                                homeTeam = {
+                                    id: 0,
+                                    name: event.competitions[0].competitors[0].team.displayName,
+                                    abbreviation: event.competitions[0].competitors[0].team.abbreviation
+                                };
+                                awayTeam = {
+                                    id: 0,
+                                    name: event.competitions[0].competitors[1].team.displayName,
+                                    abbreviation: event.competitions[0].competitors[1].team.abbreviation
+                                };
+                                homeScore = event.competitions[0].competitors[0].score || 0;
+                                awayScore = event.competitions[0].competitors[1].score || 0;
+                            } else {
+                                awayTeam = {
+                                    id: 0,
+                                    name: event.competitions[0].competitors[0].team.displayName,
+                                    abbreviation: event.competitions[0].competitors[0].team.abbreviation
+                                };
+                                homeTeam = {
+                                    id: 0,
+                                    name: event.competitions[0].competitors[1].team.displayName,
+                                    abbreviation: event.competitions[0].competitors[1].team.abbreviation
+                                };
+                                awayScore = event.competitions[0].competitors[0].score || 0;
+                                homeScore = event.competitions[0].competitors[1].score || 0;
+                            }
+                            
+                            const gameData = {
+                                id: event.id,
+                                date: targetDateStr,
+                                time: timeString,
+                                homeTeam: homeTeam,
+                                awayTeam: awayTeam,
+                                homeScore: homeScore,
+                                awayScore: awayScore,
+                                status: event.status.type.name.toLowerCase(),
+                                venue: event.competitions[0].venue?.name || '未知场馆'
+                            };
+                            
+                            schedule.push(gameData);
+                        }
                     }
-                    
-                    const gameData = {
-                        id: event.id,
-                        date: formatDateStr(targetDate),
-                        time: timeString,
-                        homeTeam: homeTeam,
-                        awayTeam: awayTeam,
-                        homeScore: homeScore,
-                        awayScore: awayScore,
-                        status: event.status.type.name.toLowerCase(),
-                        venue: event.competitions[0].venue?.name || '未知场馆'
-                    };
-                    
-                    schedule.push(gameData);
                 }
             }
+            
+            fetchDate.setUTCDate(fetchDate.getUTCDate() + 1);
         }
     } catch (error) {
         console.error('获取赛程失败:', error);
@@ -518,11 +537,6 @@ function initApp() {
         document.getElementById('language-select').value = savedLanguage;
     }
     
-    // 设置默认日期为今天
-    const today = new Date();
-    selectedDate = new Date(today);
-    currentCalendarDate = new Date(today);
-    
     // 更新UI文本
     updateUI();
     
@@ -539,25 +553,29 @@ function initApp() {
         await switchLanguage(this.value);
     });
     
-    // 绑定月份切换按钮
+    // 绑定月份切换按钮 - 使用UTC日期
     document.getElementById('prev-month').addEventListener('click', function() {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        const newYear = currentCalendarDate.getUTCFullYear();
+        const newMonth = currentCalendarDate.getUTCMonth() - 1;
+        currentCalendarDate = new Date(Date.UTC(newYear, newMonth, 1));
         renderCalendar();
     });
     
     document.getElementById('next-month').addEventListener('click', function() {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        const newYear = currentCalendarDate.getUTCFullYear();
+        const newMonth = currentCalendarDate.getUTCMonth() + 1;
+        currentCalendarDate = new Date(Date.UTC(newYear, newMonth, 1));
         renderCalendar();
     });
     
     // 生成并渲染初始赛程
     async function loadInitialSchedule() {
         try {
-            const initialSchedule = await generateSchedule(today);
-            renderSchedule(initialSchedule, today);
+            const initialSchedule = await generateSchedule(selectedDate);
+            renderSchedule(initialSchedule, selectedDate);
         } catch (error) {
             console.error('加载初始赛程失败:', error);
-            renderSchedule([], today);
+            renderSchedule([], selectedDate);
         }
     }
     
