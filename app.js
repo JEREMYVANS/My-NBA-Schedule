@@ -306,24 +306,19 @@ async function generateSchedule(selectedDateInput) {
                         homeScore = event.competitions[0].competitors[1].score || 0;
                     }
                     
-                    const gameDateStr = toChinaDateStr(gameDate);
-                    const targetDateStr = formatDateStr(targetDate);
+                    const gameData = {
+                        id: event.id,
+                        date: formatDateStr(targetDate),
+                        time: timeString,
+                        homeTeam: homeTeam,
+                        awayTeam: awayTeam,
+                        homeScore: homeScore,
+                        awayScore: awayScore,
+                        status: event.status.type.name.toLowerCase(),
+                        venue: event.competitions[0].venue?.name || '未知场馆'
+                    };
                     
-                    if (gameDateStr === targetDateStr) {
-                        const gameData = {
-                            id: event.id,
-                            date: gameDateStr,
-                            time: timeString,
-                            homeTeam: homeTeam,
-                            awayTeam: awayTeam,
-                            homeScore: homeScore,
-                            awayScore: awayScore,
-                            status: event.status.type.name.toLowerCase(),
-                            venue: event.competitions[0].venue?.name || '未知场馆'
-                        };
-                        
-                        schedule.push(gameData);
-                    }
+                    schedule.push(gameData);
                 }
             }
         }
