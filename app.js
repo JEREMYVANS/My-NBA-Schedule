@@ -292,11 +292,9 @@ async function generateSchedule(selectedDateInput) {
                         homeScore = event.competitions[0].competitors[1].score || 0;
                     }
                     
-                    const gameDateStr = `${localDate.getFullYear()}-${(localDate.getMonth() + 1).toString().padStart(2, '0')}-${localDate.getDate().toString().padStart(2, '0')}`;
-                    
                     const gameData = {
                         id: event.id,
-                        date: gameDateStr,
+                        date: formatDateStr(targetDate),
                         time: timeString,
                         homeTeam: homeTeam,
                         awayTeam: awayTeam,
