@@ -141,8 +141,6 @@ function updateUI() {
 
 // 渲染日历
 function renderCalendar() {
-    console.log('开始渲染日历');
-    
     const calendarDays = document.getElementById('calendar-days');
     const calendarTitle = document.getElementById('calendar-title');
     
@@ -182,14 +180,6 @@ function renderCalendar() {
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    console.log('日历信息:', { 
-        year, 
-        month: month + 1, 
-        firstDay: firstDay.getDate(), 
-        lastDay: lastDay.getDate(), 
-        startDay 
-    });
     
     // 添加上个月的填充日期
     const prevMonthLastDay = new Date(year, month, 0).getDate();
@@ -232,9 +222,7 @@ function renderCalendar() {
         
         dayDiv.addEventListener('click', async function(e) {
             e.stopPropagation();
-            console.log('日期被点击:', this.dataset.date);
             selectedDate = parseDate(this.dataset.date);
-            console.log('更新后的selectedDate:', selectedDate);
             renderCalendar();
             updateSelectedDateDisplay();
             
@@ -259,7 +247,6 @@ function renderCalendar() {
     }
     
     updateSelectedDateDisplay();
-    console.log('日历渲染完成');
 }
 
 // 更新选中日期显示
@@ -270,138 +257,80 @@ function updateSelectedDateDisplay() {
 
 // 获取真实NBA赛程数据
 async function generateSchedule(selectedDateInput) {
-    console.log('开始获取赛程数据', { selectedDateInput });
     const schedule = [];
     
-    // 确保日期对象只包含日期部分
     const targetDate = parseDate(formatDateStr(new Date(selectedDateInput)));
     
-    console.log('目标日期:', { targetDate });
-    
     try {
-        // 为了确保中国时区的日期完整，我们需要请求一个更宽的日期范围
-        // 从目标日期的前一天到后一天，然后再过滤中国时区的日期
-        const fetchStart = new Date(targetDate);
-        fetchStart.setDate(fetchStart.getDate() - 1);
+        const year = targetDate.getFullYear();
+        const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = targetDate.getDate().toString().padStart(2, '0');
+        const formattedDate = `${year}${month}${day}`;
         
-        const fetchEnd = new Date(targetDate);
-        fetchEnd.setDate(fetchEnd.getDate() + 1);
+        const response = await fetch(`/api/schedule?date=${formattedDate}`);
         
-        const fetchDate = new Date(fetchStart);
-        
-        console.log('请求日期范围:', { 
-            用户选择日期: formatDateStr(targetDate),
-            实际请求开始: formatDateStr(fetchStart),
-            实际请求结束: formatDateStr(fetchEnd)
-        });
-        
-        // 循环获取每一天的比赛
-        while (fetchDate <= fetchEnd) {
-            // 格式化日期为YYYYMMDD格式
-            const year = fetchDate.getFullYear();
-            const month = (fetchDate.getMonth() + 1).toString().padStart(2, '0');
-            const day = fetchDate.getDate().toString().padStart(2, '0');
-            const dateStr = `${year}${month}${day}`;
+        if (response.ok) {
+            const data = await response.json();
             
-            // 尝试使用ESPN的NBA赛程API，添加日期参数
-            const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`;
-            console.log('请求URL:', url);
-            
-            const response = await fetch(url);
-            console.log('响应状态:', response.status);
-            
-            if (response.ok) {
-                const data = await response.json();
-                
-                if (data.events) {
-                    console.log(`找到 ${data.events.length} 场比赛`);
+            if (data.events) {
+                for (const event of data.events) {
+                    const gameDate = new Date(event.date);
+                    const timeString = toChinaTimeStr(gameDate);
                     
-                    for (const event of data.events) {
-                        const gameDate = new Date(event.date);
-                        
-                        // 解析比赛时间，按照中国时区（UTC+8）显示
-                        const timeString = toChinaTimeStr(gameDate);
-                        
-                        // 确定主客队和比分
-                        let homeTeam, awayTeam, homeScore, awayScore;
-                        if (event.competitions[0].competitors[0].homeAway === 'home') {
-                            homeTeam = {
-                                id: 0,
-                                name: event.competitions[0].competitors[0].team.displayName,
-                                abbreviation: event.competitions[0].competitors[0].team.abbreviation
-                            };
-                            awayTeam = {
-                                id: 0,
-                                name: event.competitions[0].competitors[1].team.displayName,
-                                abbreviation: event.competitions[0].competitors[1].team.abbreviation
-                            };
-                            homeScore = event.competitions[0].competitors[0].score || 0;
-                            awayScore = event.competitions[0].competitors[1].score || 0;
-                        } else {
-                            awayTeam = {
-                                id: 0,
-                                name: event.competitions[0].competitors[0].team.displayName,
-                                abbreviation: event.competitions[0].competitors[0].team.abbreviation
-                            };
-                            homeTeam = {
-                                id: 0,
-                                name: event.competitions[0].competitors[1].team.displayName,
-                                abbreviation: event.competitions[0].competitors[1].team.abbreviation
-                            };
-                            awayScore = event.competitions[0].competitors[0].score || 0;
-                            homeScore = event.competitions[0].competitors[1].score || 0;
-                        }
-                        
-                        // 转换为中国时区日期
-                        const gameDateStr = toChinaDateStr(gameDate);
-                        const targetDateStr = formatDateStr(targetDate);
-                        
-                        console.log('比赛日期处理:', { 
-                            请求日期: dateStr,
-                            原始日期: event.date, 
-                            UTC日期: gameDate.toISOString(),
-                            中国日期: gameDateStr, 
-                            目标日期: targetDateStr 
-                        });
-                        
-                        if (gameDateStr === targetDateStr) {
-                            // 添加到赛程
-                            const gameData = {
-                                id: event.id,
-                                date: gameDateStr,
-                                time: timeString,
-                                homeTeam: homeTeam,
-                                awayTeam: awayTeam,
-                                homeScore: homeScore,
-                                awayScore: awayScore,
-                                status: event.status.type.name.toLowerCase(),
-                                venue: event.competitions[0].venue?.name || '未知场馆'
-                            };
-                            
-                            console.log('✅ 添加比赛:', gameData);
-                            schedule.push(gameData);
-                        } else {
-                            console.log('❌ 比赛日期不在用户选择范围内，跳过:', gameDateStr);
-                        }
+                    let homeTeam, awayTeam, homeScore, awayScore;
+                    if (event.competitions[0].competitors[0].homeAway === 'home') {
+                        homeTeam = {
+                            id: 0,
+                            name: event.competitions[0].competitors[0].team.displayName,
+                            abbreviation: event.competitions[0].competitors[0].team.abbreviation
+                        };
+                        awayTeam = {
+                            id: 0,
+                            name: event.competitions[0].competitors[1].team.displayName,
+                            abbreviation: event.competitions[0].competitors[1].team.abbreviation
+                        };
+                        homeScore = event.competitions[0].competitors[0].score || 0;
+                        awayScore = event.competitions[0].competitors[1].score || 0;
+                    } else {
+                        awayTeam = {
+                            id: 0,
+                            name: event.competitions[0].competitors[0].team.displayName,
+                            abbreviation: event.competitions[0].competitors[0].team.abbreviation
+                        };
+                        homeTeam = {
+                            id: 0,
+                            name: event.competitions[0].competitors[1].team.displayName,
+                            abbreviation: event.competitions[0].competitors[1].team.abbreviation
+                        };
+                        awayScore = event.competitions[0].competitors[0].score || 0;
+                        homeScore = event.competitions[0].competitors[1].score || 0;
                     }
-                } else {
-                    console.log('没有找到比赛事件');
+                    
+                    const gameDateStr = toChinaDateStr(gameDate);
+                    const targetDateStr = formatDateStr(targetDate);
+                    
+                    if (gameDateStr === targetDateStr) {
+                        const gameData = {
+                            id: event.id,
+                            date: gameDateStr,
+                            time: timeString,
+                            homeTeam: homeTeam,
+                            awayTeam: awayTeam,
+                            homeScore: homeScore,
+                            awayScore: awayScore,
+                            status: event.status.type.name.toLowerCase(),
+                            venue: event.competitions[0].venue?.name || '未知场馆'
+                        };
+                        
+                        schedule.push(gameData);
+                    }
                 }
             }
-            
-            // 移动到下一天
-            fetchDate.setDate(fetchDate.getDate() + 1);
-            
-            // 延迟请求，避免被API限制
-            await new Promise(resolve => setTimeout(resolve, 300));
         }
-        
-        console.log('最终赛程数据:', schedule);
     } catch (error) {
         console.error('获取赛程失败:', error);
     }
     
-    // 去重（如果有重复的比赛）
     const uniqueSchedule = [];
     const gameIds = new Set();
     
@@ -412,13 +341,11 @@ async function generateSchedule(selectedDateInput) {
         }
     }
     
-    console.log('最终赛程数据:', uniqueSchedule);
     return uniqueSchedule;
 }
 
 // 渲染赛程
 function renderSchedule(schedule, selectedDateInput) {
-    console.log('渲染赛程', schedule, selectedDateInput);
     const container = document.getElementById('schedule-container');
     container.innerHTML = '';
     
@@ -469,34 +396,24 @@ function renderSchedule(schedule, selectedDateInput) {
         
         container.appendChild(gameSection);
     });
-    
-    console.log('赛程渲染完成');
 }
 
 // 获取 NBA 排名数据
 async function getStandings() {
-    console.log('开始获取真实 NBA 排名数据');
     const standings = {
         eastern: [],
         western: []
     };
     
     try {
-        // 使用 ESPN 的 API v2 获取排名数据
-        const standingsUrl = 'https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?region=us&lang=en&contentorigin=espn';
-        console.log('请求排名 URL:', standingsUrl);
-        
-        const response = await fetch(standingsUrl);
-        console.log('排名响应状态:', response.status);
+        const response = await fetch('/api/standings');
         
         if (response.ok) {
             const data = await response.json();
-            console.log('获取到的排名数据:', data);
             
             if (data.children && data.children.length > 0) {
                 for (const conference of data.children) {
                     const conferenceName = conference.name.toLowerCase().includes('east') ? 'eastern' : 'western';
-                    console.log('处理联盟:', conference.name, '->', conferenceName);
                     
                     if (conference.standings && conference.standings.entries && conference.standings.entries.length > 0) {
                         for (const entry of conference.standings.entries) {
@@ -515,28 +432,23 @@ async function getStandings() {
                                 percentage: winPercent
                             };
                             standings[conferenceName].push(teamData);
-                            console.log('添加球队:', teamData.name, '到', conferenceName);
                         }
                     }
                 }
                 
-                // 按胜率排序
                 standings.eastern.sort((a, b) => b.percentage - a.percentage);
                 standings.western.sort((a, b) => b.percentage - a.percentage);
             }
         }
     } catch (error) {
-        console.error('获取真实排名失败:', error);
+        console.error('获取排名失败:', error);
     }
     
-    console.log('最终真实排名数据:', standings);
     return standings;
 }
 
 // 渲染排名
 function renderStandings(standings) {
-    console.log('渲染排名', standings);
-    
     // 渲染东部排名
     const easternContainer = document.getElementById('eastern-conference');
     easternContainer.innerHTML = '';
@@ -576,8 +488,6 @@ function renderStandings(standings) {
         
         westernContainer.appendChild(teamItem);
     });
-    
-    console.log('排名渲染完成');
 }
 
 // 切换夜间模式
@@ -617,8 +527,6 @@ function initDarkMode() {
 
 // 初始化应用
 function initApp() {
-    console.log('应用初始化开始');
-    
     // 初始化夜间模式
     initDarkMode();
     
@@ -663,14 +571,9 @@ function initApp() {
     
     // 生成并渲染初始赛程
     async function loadInitialSchedule() {
-        console.log('开始加载初始赛程');
         try {
-            console.log('尝试获取真实赛程');
             const initialSchedule = await generateSchedule(today);
-            console.log('获取到赛程数据，长度:', initialSchedule.length);
-            
             renderSchedule(initialSchedule, today);
-            console.log('赛程渲染完成');
         } catch (error) {
             console.error('加载初始赛程失败:', error);
             renderSchedule([], today);
@@ -679,28 +582,16 @@ function initApp() {
     
     // 加载并渲染排名
     async function loadStandings() {
-        console.log('开始加载排名');
         try {
             const standings = await getStandings();
             renderStandings(standings);
-            console.log('排名渲染完成');
         } catch (error) {
             console.error('加载排名失败:', error);
-            const mockStandings = {
-                eastern: generateMockStandings('eastern'),
-                western: generateMockStandings('western')
-            };
-            renderStandings(mockStandings);
         }
     }
     
-    console.log('调用loadInitialSchedule');
     loadInitialSchedule();
-    
-    console.log('调用loadStandings');
     loadStandings();
-    
-    console.log('应用初始化完成');
 }
 
 // 页面加载完成后初始化应用
