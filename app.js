@@ -64,23 +64,6 @@ function formatDateStr(date) {
     return `${year}-${month}-${day}`;
 }
 
-// 工具函数：将UTC日期转换为中国时区日期字符串
-function toChinaDateStr(utcDate) {
-    const chinaDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
-    const year = chinaDate.getUTCFullYear();
-    const month = (chinaDate.getUTCMonth() + 1).toString().padStart(2, '0');
-    const day = chinaDate.getUTCDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-// 工具函数：将UTC时间转换为中国时区时间字符串
-function toChinaTimeStr(utcDate) {
-    const chinaDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
-    const hours = chinaDate.getUTCHours().toString().padStart(2, '0');
-    const minutes = chinaDate.getUTCMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
-}
-
 // 获取翻译文本
 function t(key) {
     return translations[currentLanguage][key] || key;
@@ -274,8 +257,11 @@ async function generateSchedule(selectedDateInput) {
             
             if (data.events) {
                 for (const event of data.events) {
-                    const gameDate = new Date(event.date);
-                    const timeString = toChinaTimeStr(gameDate);
+                    const localDate = new Date(event.date);
+                    const timeString = localDate.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                     
                     let homeTeam, awayTeam, homeScore, awayScore;
                     if (event.competitions[0].competitors[0].homeAway === 'home') {
